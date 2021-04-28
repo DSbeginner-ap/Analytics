@@ -21,14 +21,12 @@
 						"type": "DataFlowReference",
 						"parameters": {
 							"PrimaryKey": "'CustomerID'",
-							"Columns": "'FirstName, MiddleName, LastName'"
+							"Columns": "'FirstName, MiddleName, LastName'",
+							"StartDate": "currentDate()",
+							"IsCurrent": "1"
 						}
 					},
 					"staging": {
-						"linkedService": {
-							"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
-							"type": "LinkedServiceReference"
-						},
 						"folderPath": "ashishsynapsefilesystem/synapse/workspaces/testashishsynapse/warehouse"
 					},
 					"compute": {
