@@ -1,5 +1,5 @@
 {
-	"name": "TestCustomerSCD",
+	"name": "TestCustomerSCD_1",
 	"properties": {
 		"content": {
 			"query": "--Check Existing Data\nSELECT * FROM DimCustomer\n\n--Check Existing Data\nSELECT * FROM DimCustomer WHERE CustomerID = 4   --Last Name = Gates\n\n--Update CustomerSource table - Update LastName to Validate SCD - Type 1 flow\nUPDATE CustomerSource\nSET LastName = 'Lopez'\n    WHERE CustomerID = 4 ;\n\nSELECT * FROM CustomerSource WHERE CustomerID = 4;\n\n--Last Name should be updated to PATEL for CustomerID = 4\nSELECT * FROM DimCustomer WHERE CustomerID = 4\n\n",
