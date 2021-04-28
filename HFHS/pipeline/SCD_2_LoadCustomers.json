@@ -1,5 +1,5 @@
 {
-	"name": "LoadCustomers_SCD_2",
+	"name": "SCD_2_LoadCustomers",
 	"properties": {
 		"description": "Load Customer - SCD 2 ",
 		"activities": [

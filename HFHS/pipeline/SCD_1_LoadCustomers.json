@@ -1,5 +1,5 @@
 {
-	"name": "LoadCustomers_SCD_1",
+	"name": "SCD_1_LoadCustomers",
 	"properties": {
 		"description": "Create flow to test Customer Data SCD Type 1 Data",
 		"activities": [
