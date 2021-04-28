@@ -1,0 +1,56 @@
+{
+	"name": "UpdateCustomerDimension",
+	"properties": {
+		"description": "Import Data From Customer Source.",
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CustomerSource",
+						"type": "DatasetReference"
+					},
+					"name": "SourceDB"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimCustomer_2",
+						"type": "DatasetReference"
+					},
+					"name": "MaxCustomerKey"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimCustomer_2",
+						"type": "DatasetReference"
+					},
+					"name": "DimCustomer2Data"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DimCustomer_2",
+						"type": "DatasetReference"
+					},
+					"name": "InsertNewData"
+				}
+			],
+			"transformations": [
+				{
+					"name": "RenameColumns"
+				},
+				{
+					"name": "CrossCheckKeys"
+				},
+				{
+					"name": "CheckExistingData"
+				},
+				{
+					"name": "SplitBasedOnMatch"
+				}
+			],
+			"script": "parameters{\n\tPrimaryKey as string ('CustomerID'),\n\tColumns as string ('FirstName, MiddleName, LastName'),\n\tStartDate as date (currentDate()),\n\tIsCurrent as integer (1)\n}\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> SourceDB\nsource(output(\n\t\tCustomerKey as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'SELECT MAX(CustomerKey) AS CustomerKey\\n FROM [dbo].[DimCustomer_2]',\n\tformat: 'query',\n\tstaged: false) ~> MaxCustomerKey\nsource(output(\n\t\tCustomerKey as integer,\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tStartDate as timestamp,\n\t\tEndDate as date,\n\t\tModifiedDate as date,\n\t\tIsCurrent as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> DimCustomer2Data\nSourceDB select(mapColumn(\n\t\tsrc_CustomerID = CustomerID,\n\t\tsrc_Title = Title,\n\t\tsrc_FirstName = FirstName,\n\t\tsrc_MiddleName = MiddleName,\n\t\tsrc_LastName = LastName,\n\t\tsrc_Suffix = Suffix,\n\t\tscr_CompanyName = CompanyName,\n\t\tscr_SalesPerson = SalesPerson,\n\t\tsrc_EmailAddress = EmailAddress,\n\t\tsrc_Phone = Phone\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RenameColumns\nRenameColumns, MaxCustomerKey join(1==1,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> CrossCheckKeys\nCrossCheckKeys, DimCustomer2Data join(src_CustomerID == CustomerID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> CheckExistingData\nCheckExistingData split(src_CustomerID == CustomerID,\n\tdisjoint: false) ~> SplitBasedOnMatch@(MatchData, UnMatchedData)\nSplitBasedOnMatch@UnMatchedData sink(input(\n\t\tCustomerKey as integer,\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tStartDate as timestamp,\n\t\tEndDate as date,\n\t\tModifiedDate as date,\n\t\tIsCurrent as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tstaged: true,\n\tallowCopyCommand: true,\n\tmapColumn(\n\t\tCustomerID = src_CustomerID,\n\t\tTitle = src_Title,\n\t\tFirstName = src_FirstName,\n\t\tMiddleName = src_MiddleName,\n\t\tLastName = src_LastName,\n\t\tSuffix = src_Suffix,\n\t\tCompanyName = scr_CompanyName,\n\t\tSalesPerson = scr_SalesPerson,\n\t\tEmailAddress = src_EmailAddress,\n\t\tPhone = src_Phone\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> InsertNewData"
+		}
+	}
+}

@@ -1,0 +1,48 @@
+{
+	"name": "LoadCustomers_SCD_1",
+	"properties": {
+		"description": "Create flow to test Customer Data SCD Type 1 Data",
+		"activities": [
+			{
+				"name": "LoadCustomer",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "UpdateCustomerDimension",
+						"type": "DataFlowReference",
+						"parameters": {
+							"PrimaryKey": "'CustomerID'",
+							"Columns": "'FirstName, MiddleName, LastName'",
+							"StartDate": "currentDate()",
+							"IsCurrent": "1"
+						}
+					},
+					"staging": {
+						"linkedService": {
+							"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
+							"type": "LinkedServiceReference"
+						},
+						"folderPath": "ashishsynapsefilesystem/synapse/workspaces/testashishsynapse/warehouse"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-04-28T21:14:08Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

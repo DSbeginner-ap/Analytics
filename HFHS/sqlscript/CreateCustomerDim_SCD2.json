@@ -1,0 +1,18 @@
+{
+	"name": "CreateCustomerDim_SCD2",
+	"properties": {
+		"description": "Create table for SCD Type - 2 Data",
+		"content": {
+			"query": "CREATE TABLE dbo.[DimCustomer_2](\n    [CustomerID] [int] NOT NULL,\n    [Title] [nvarchar](8) NULL,\n    [FirstName] [nvarchar](50) NOT NULL,\n    [MiddleName] [nvarchar](50) NULL,\n    [LastName] [nvarchar](50) NOT NULL,\n    [Suffix] [nvarchar](10) NULL,\n    [CompanyName] [nvarchar](128) NULL,\n    [SalesPerson] [nvarchar](256) NULL,\n    [EmailAddress] [nvarchar](50) NULL,\n    [Phone] [nvarchar](25) NULL,\n    [InsertedDate] [datetime] NOT NULL,\n    [ModifiedDate] [datetime] NOT NULL,\n    [HashKey] [char](66)\n)\nWITH\n(\n    DISTRIBUTION = REPLICATE,\n    CLUSTERED COLUMNSTORE INDEX\n)",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "testsqlpool",
+				"databaseName": "testsqlpool"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
