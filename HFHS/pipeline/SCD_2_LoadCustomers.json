@@ -17,7 +17,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "UpdateCustomerDimension",
+						"referenceName": "UpdateCustomerDimension_SCD_2",
 						"type": "DataFlowReference",
 						"parameters": {
 							"PrimaryKey": "'CustomerID'",
