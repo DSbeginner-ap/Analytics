@@ -21,13 +21,8 @@
 						"type": "DataFlowReference",
 						"parameters": {
 							"PrimaryKey": "'CustomerID'",
-							"Columns": "'FirstName, MiddleName, LastName'",
-							"StartDate": "currentDate()",
-							"IsCurrent": "1"
+							"Columns": "'FirstName, MiddleName, LastName'"
 						}
-					},
-					"staging": {
-						"folderPath": "ashishsynapsefilesystem/synapse/workspaces/testashishsynapse/warehouse"
 					},
 					"compute": {
 						"coreCount": 8,
