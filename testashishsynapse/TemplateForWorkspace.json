@@ -199,85 +199,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/DimCustomer')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "SynapseSQLPool",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlDWTable",
-				"schema": [
-					{
-						"name": "CustomerID",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "Title",
-						"type": "nvarchar"
-					},
-					{
-						"name": "FirstName",
-						"type": "nvarchar"
-					},
-					{
-						"name": "MiddleName",
-						"type": "nvarchar"
-					},
-					{
-						"name": "LastName",
-						"type": "nvarchar"
-					},
-					{
-						"name": "Suffix",
-						"type": "nvarchar"
-					},
-					{
-						"name": "CompanyName",
-						"type": "nvarchar"
-					},
-					{
-						"name": "SalesPerson",
-						"type": "nvarchar"
-					},
-					{
-						"name": "EmailAddress",
-						"type": "nvarchar"
-					},
-					{
-						"name": "Phone",
-						"type": "nvarchar"
-					},
-					{
-						"name": "InsertedDate",
-						"type": "datetime",
-						"precision": 23,
-						"scale": 3
-					},
-					{
-						"name": "ModifiedDate",
-						"type": "datetime",
-						"precision": 23,
-						"scale": 3
-					},
-					{
-						"name": "HashKey",
-						"type": "char"
-					}
-				],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "DimCustomer"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/SynapseSQLPool')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/DimCustomer_1')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -558,7 +479,7 @@
 					"sources": [
 						{
 							"dataset": {
-								"referenceName": "CustomerSource",
+								"referenceName": "CustomerSourceADLS",
 								"type": "DatasetReference"
 							},
 							"name": "SourceDB"
@@ -597,11 +518,11 @@
 							"name": "AllowUpserts"
 						}
 					],
-					"script": "parameters{\n\tPrimaryKey as string ('CustomerID'),\n\tColumns as string ('FirstName, MiddleName, LastName'),\n\tStartDate as date (currentDate()),\n\tIsCurrent as integer (1)\n}\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> SourceDB\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> DimCustomer\nSourceDB derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateCustomerHash\nCreateCustomerHash, DimCustomer exists(CreateCustomerHash@HashKey == DimCustomer@HashKey,\n\tnegate:true,\n\tbroadcast: 'auto')~> Exists\nExists, DimCustomer lookup(SourceDB@CustomerID == DimCustomer@CustomerID,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupCustomerID\nLookupCustomerID derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),\n\t\tModifiedDate = currentTimestamp()) ~> SetDates\nSetDates alterRow(upsertIf(true())) ~> AllowUpserts\nAllowUpserts sink(input(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:false,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:['CustomerID'],\n\tformat: 'table',\n\tstaged: false,\n\tmapColumn(\n\t\tCustomerID = SourceDB@CustomerID,\n\t\tTitle = SourceDB@Title,\n\t\tFirstName = SourceDB@FirstName,\n\t\tMiddleName = SourceDB@MiddleName,\n\t\tLastName = SourceDB@LastName,\n\t\tSuffix = SourceDB@Suffix,\n\t\tCompanyName = SourceDB@CompanyName,\n\t\tSalesPerson = SourceDB@SalesPerson,\n\t\tEmailAddress = SourceDB@EmailAddress,\n\t\tPhone = SourceDB@Phone,\n\t\tInsertedDate,\n\t\tModifiedDate,\n\t\tHashKey = CreateCustomerHash@HashKey\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Sink"
+					"script": "parameters{\n\tPrimaryKey as string ('CustomerID'),\n\tColumns as string ('FirstName, MiddleName, LastName'),\n\tStartDate as date (currentDate()),\n\tIsCurrent as integer (1)\n}\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SourceDB\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> DimCustomer\nSourceDB derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateCustomerHash\nCreateCustomerHash, DimCustomer exists(CreateCustomerHash@HashKey == DimCustomer@HashKey,\n\tnegate:true,\n\tbroadcast: 'auto')~> Exists\nExists, DimCustomer lookup(SourceDB@CustomerID == DimCustomer@CustomerID,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupCustomerID\nLookupCustomerID derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),\n\t\tModifiedDate = currentTimestamp()) ~> SetDates\nSetDates alterRow(upsertIf(true())) ~> AllowUpserts\nAllowUpserts sink(input(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:false,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:['CustomerID'],\n\tformat: 'table',\n\tstaged: false,\n\tmapColumn(\n\t\tCustomerID = SourceDB@CustomerID,\n\t\tTitle = SourceDB@Title,\n\t\tFirstName = SourceDB@FirstName,\n\t\tMiddleName = SourceDB@MiddleName,\n\t\tLastName = SourceDB@LastName,\n\t\tSuffix = SourceDB@Suffix,\n\t\tCompanyName = SourceDB@CompanyName,\n\t\tSalesPerson = SourceDB@SalesPerson,\n\t\tEmailAddress = SourceDB@EmailAddress,\n\t\tPhone = SourceDB@Phone,\n\t\tInsertedDate,\n\t\tModifiedDate,\n\t\tHashKey = CreateCustomerHash@HashKey\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Sink"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/CustomerSource')]",
+				"[concat(variables('workspaceId'), '/datasets/CustomerSourceADLS')]",
 				"[concat(variables('workspaceId'), '/datasets/DimCustomer_1')]"
 			]
 		},
@@ -679,12 +600,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/TestCustomerSCD')]",
+			"name": "[concat(parameters('workspaceName'), '/TestCustomerSCD_1')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "--Check Existing Data\nSELECT * FROM DimCustomer\n\n--Check Existing Data\nSELECT * FROM DimCustomer WHERE CustomerID = 4   --Last Name = Gates\n\n--Update CustomerSource table - Update LastName to Validate SCD - Type 1 flow\nUPDATE CustomerSource\nSET LastName = 'Lopez'\n    WHERE CustomerID = 4 ;\n\nSELECT * FROM CustomerSource WHERE CustomerID = 4;\n\n--Last Name should be updated to PATEL for CustomerID = 4\nSELECT * FROM DimCustomer WHERE CustomerID = 4\n\n",
+					"query": "--Check Existing Data\nSELECT * FROM DimCustomer_1\n\n--Check Existing Data\nSELECT * FROM DimCustomer_1 WHERE CustomerID = 4   --Last Name = Gates\n\n--Update CustomerSource table - Update LastName to Validate SCD - Type 1 flow\nUPDATE CustomerSource\nSET LastName = 'PATEL'\n    WHERE CustomerID = 4 ;\n\nSELECT * FROM CustomerSource WHERE CustomerID = 4;\n\n--Last Name should be updated to PATEL for CustomerID = 4\nSELECT * FROM DimCustomer_1 WHERE CustomerID = 4\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -710,6 +631,74 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CustomerSourceADLS')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "Customers",
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "CustomerSource.xlsx",
+						"folderPath": "Customers",
+						"fileSystem": "ashishsynapsefilesystem"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "Title",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "MiddleName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Suffix",
+						"type": "String"
+					},
+					{
+						"name": "CompanyName",
+						"type": "String"
+					},
+					{
+						"name": "SalesPerson",
+						"type": "String"
+					},
+					{
+						"name": "EmailAddress",
+						"type": "String"
+					},
+					{
+						"name": "Phone",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/testashishsynapse-WorkspaceDefaultStorage')]"
+			]
 		}
 	]
 }
