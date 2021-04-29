@@ -199,6 +199,74 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/CustomerSourceADLS')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "Customers",
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "CustomerSource.xlsx",
+						"folderPath": "Customers",
+						"fileSystem": "ashishsynapsefilesystem"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "Title",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "MiddleName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Suffix",
+						"type": "String"
+					},
+					{
+						"name": "CompanyName",
+						"type": "String"
+					},
+					{
+						"name": "SalesPerson",
+						"type": "String"
+					},
+					{
+						"name": "EmailAddress",
+						"type": "String"
+					},
+					{
+						"name": "Phone",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/testashishsynapse-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/DimCustomer_1')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -633,72 +701,25 @@
 			"location": "eastus"
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/CustomerSourceADLS')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
+			"name": "[concat(parameters('workspaceName'), '/Create_DimCustomer')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"linkedServiceName": {
-					"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
-					"type": "LinkedServiceReference"
+				"description": "Create Customer Dim script. ",
+				"content": {
+					"query": "DROP TABLE [dbo].[DimCustomer_1]\nGO\n\nSET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE TABLE [dbo].[DimCustomer_1]\n( \n\t[CustomerKey] INT IDENTITY (1, 1),\n\t[CustomerID] [int]  NOT NULL,\n\t[Title] [nvarchar](8)  NULL,\n\t[FirstName] [nvarchar](50)  NOT NULL,\n\t[MiddleName] [nvarchar](50)  NULL,\n\t[LastName] [nvarchar](50)  NOT NULL,\n\t[Suffix] [nvarchar](10)  NULL,\n\t[CompanyName] [nvarchar](128)  NULL,\n\t[SalesPerson] [nvarchar](256)  NULL,\n\t[EmailAddress] [nvarchar](50)  NULL,\n\t[Phone] [nvarchar](25)  NULL,\n\t[InsertedDate] [datetime]  NOT NULL,\n\t[ModifiedDate] [datetime]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = REPLICATE,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "testsqlpool",
+						"databaseName": "testsqlpool"
+					},
+					"resultLimit": 5000
 				},
-				"annotations": [],
-				"type": "Excel",
-				"typeProperties": {
-					"sheetName": "Customers",
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileName": "CustomerSource.xlsx",
-						"folderPath": "Customers",
-						"fileSystem": "ashishsynapsefilesystem"
-					},
-					"firstRowAsHeader": true
-				},
-				"schema": [
-					{
-						"name": "CustomerID",
-						"type": "String"
-					},
-					{
-						"name": "Title",
-						"type": "String"
-					},
-					{
-						"name": "FirstName",
-						"type": "String"
-					},
-					{
-						"name": "MiddleName",
-						"type": "String"
-					},
-					{
-						"name": "LastName",
-						"type": "String"
-					},
-					{
-						"name": "Suffix",
-						"type": "String"
-					},
-					{
-						"name": "CompanyName",
-						"type": "String"
-					},
-					{
-						"name": "SalesPerson",
-						"type": "String"
-					},
-					{
-						"name": "EmailAddress",
-						"type": "String"
-					},
-					{
-						"name": "Phone",
-						"type": "String"
-					}
-				]
+				"type": "SqlQuery"
 			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/testashishsynapse-WorkspaceDefaultStorage')]"
-			]
+			"dependsOn": []
 		}
 	]
 }
