@@ -11,17 +11,9 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'SynapseSQLPool'"
 		},
-		"ls_1_accountKey": {
-			"type": "secureString",
-			"metadata": "Secure string for 'accountKey' of 'ls_1'"
-		},
 		"testashishsynapse-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'testashishsynapse-WorkspaceDefaultSqlServer'"
-		},
-		"ls_1_properties_typeProperties_url": {
-			"type": "string",
-			"defaultValue": "https://ashishsynapse.dfs.core.windows.net"
 		},
 		"testashishsynapse-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
@@ -57,9 +49,7 @@
 								"type": "DataFlowReference",
 								"parameters": {
 									"PrimaryKey": "'CustomerID'",
-									"Columns": "'FirstName, MiddleName, LastName'",
-									"StartDate": "currentDate()",
-									"IsCurrent": "1"
+									"Columns": "'FirstName, MiddleName, LastName'"
 								},
 								"datasetParameters": {
 									"SourceDB": {},
@@ -105,18 +95,16 @@
 						"userProperties": [],
 						"typeProperties": {
 							"dataflow": {
-								"referenceName": "UpdateCustomerDimension",
+								"referenceName": "UpdateCustomerDimension_SCD_2",
 								"type": "DataFlowReference",
 								"parameters": {
 									"PrimaryKey": "'CustomerID'",
-									"Columns": "'FirstName, MiddleName, LastName'",
-									"StartDate": "currentDate()",
-									"IsCurrent": "1"
+									"Columns": "'FirstName, MiddleName, LastName'"
 								},
 								"datasetParameters": {
 									"SourceDB": {},
 									"DimCustomer": {},
-									"Sink": {}
+									"DimensionTableSink": {}
 								}
 							},
 							"staging": {},
@@ -132,7 +120,8 @@
 				"lastPublishTime": "2021-04-28T20:40:54Z"
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/UpdateCustomerDimension')]"
+				"[concat(variables('workspaceId'), '/dataflows/UpdateCustomerDimension_SCD_2')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
 			]
 		},
 		{
@@ -452,29 +441,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/ls_1')]",
-			"type": "Microsoft.Synapse/workspaces/linkedServices",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobFS",
-				"typeProperties": {
-					"url": "[parameters('ls_1_properties_typeProperties_url')]",
-					"accountKey": {
-						"type": "SecureString",
-						"value": "[parameters('ls_1_accountKey')]"
-					}
-				},
-				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/testashishsynapse-WorkspaceDefaultSqlServer')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -586,12 +552,85 @@
 							"name": "AllowUpserts"
 						}
 					],
-					"script": "parameters{\n\tPrimaryKey as string ('CustomerID'),\n\tColumns as string ('FirstName, MiddleName, LastName'),\n\tStartDate as date (currentDate()),\n\tIsCurrent as integer (1)\n}\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SourceDB\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> DimCustomer\nSourceDB derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateCustomerHash\nCreateCustomerHash, DimCustomer exists(CreateCustomerHash@HashKey == DimCustomer@HashKey,\n\tnegate:true,\n\tbroadcast: 'auto')~> Exists\nExists, DimCustomer lookup(SourceDB@CustomerID == DimCustomer@CustomerID,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupCustomerID\nLookupCustomerID derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),\n\t\tModifiedDate = currentTimestamp()) ~> SetDates\nSetDates alterRow(upsertIf(true())) ~> AllowUpserts\nAllowUpserts sink(input(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:false,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:['CustomerID'],\n\tformat: 'table',\n\tstaged: false,\n\tmapColumn(\n\t\tCustomerID = SourceDB@CustomerID,\n\t\tTitle = SourceDB@Title,\n\t\tFirstName = SourceDB@FirstName,\n\t\tMiddleName = SourceDB@MiddleName,\n\t\tLastName = SourceDB@LastName,\n\t\tSuffix = SourceDB@Suffix,\n\t\tCompanyName = SourceDB@CompanyName,\n\t\tSalesPerson = SourceDB@SalesPerson,\n\t\tEmailAddress = SourceDB@EmailAddress,\n\t\tPhone = SourceDB@Phone,\n\t\tInsertedDate,\n\t\tModifiedDate,\n\t\tHashKey = CreateCustomerHash@HashKey\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Sink"
+					"script": "parameters{\n\tPrimaryKey as string ('CustomerID'),\n\tColumns as string ('FirstName, MiddleName, LastName')\n}\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SourceDB\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> DimCustomer\nSourceDB derive(HashKey = sha2(256, iifNull(Title,'') +FirstName +iifNull(MiddleName,'') +LastName +iifNull(Suffix,'') +iifNull(CompanyName,'') +iifNull(SalesPerson,'') +iifNull(EmailAddress,'') +iifNull(Phone,''))) ~> CreateCustomerHash\nCreateCustomerHash, DimCustomer exists(CreateCustomerHash@HashKey == DimCustomer@HashKey,\n\tnegate:true,\n\tbroadcast: 'auto')~> Exists\nExists, DimCustomer lookup(SourceDB@CustomerID == DimCustomer@CustomerID,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupCustomerID\nLookupCustomerID derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),\n\t\tModifiedDate = currentTimestamp()) ~> SetDates\nSetDates alterRow(upsertIf(true())) ~> AllowUpserts\nAllowUpserts sink(input(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tInsertedDate as timestamp,\n\t\tModifiedDate as timestamp,\n\t\tHashKey as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:false,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:['CustomerID'],\n\tformat: 'table',\n\tstaged: false,\n\tmapColumn(\n\t\tCustomerID = SourceDB@CustomerID,\n\t\tTitle = SourceDB@Title,\n\t\tFirstName = SourceDB@FirstName,\n\t\tMiddleName = SourceDB@MiddleName,\n\t\tLastName = SourceDB@LastName,\n\t\tSuffix = SourceDB@Suffix,\n\t\tCompanyName = SourceDB@CompanyName,\n\t\tSalesPerson = SourceDB@SalesPerson,\n\t\tEmailAddress = SourceDB@EmailAddress,\n\t\tPhone = SourceDB@Phone,\n\t\tInsertedDate,\n\t\tModifiedDate,\n\t\tHashKey\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Sink"
 				}
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/CustomerSourceADLS')]",
 				"[concat(variables('workspaceId'), '/datasets/DimCustomer_1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/UpdateCustomerDimension_SCD_2')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Import Data From Customer Source.",
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CustomerSourceADLS",
+								"type": "DatasetReference"
+							},
+							"name": "SourceDB"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimCustomer_2",
+								"type": "DatasetReference"
+							},
+							"name": "DimCustomer"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DimCustomer_2",
+								"type": "DatasetReference"
+							},
+							"name": "DimensionTableSink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AddHashInputs"
+						},
+						{
+							"name": "RenameSourceColumns"
+						},
+						{
+							"name": "FilterForActive"
+						},
+						{
+							"name": "AddHashExisting"
+						},
+						{
+							"name": "AddCustomerKey"
+						},
+						{
+							"name": "JoinWithMaxSurrogatekey"
+						},
+						{
+							"name": "GetMaxSurrogateKey"
+						},
+						{
+							"name": "AddDimensionColumns"
+						},
+						{
+							"name": "DropUnwantedColumns"
+						},
+						{
+							"name": "MarkAsInsert"
+						}
+					],
+					"script": "parameters{\n\tPrimaryKey as string ('src_CustomerID'),\n\tColumns as string ('src_FirstName,src_MiddleName,src_LastName')\n}\nsource(output(\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> SourceDB\nsource(output(\n\t\tCustomerKey as integer,\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tStartDate as timestamp,\n\t\tEndDate as date,\n\t\tModifiedDate as date,\n\t\tIsCurrent as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> DimCustomer\nRenameSourceColumns derive(Id_Hash = md5(byName($PrimaryKey)),\n\t\tColumns_Hash = md5(byNames(split($Columns, ',')))) ~> AddHashInputs\nSourceDB select(mapColumn(\n\t\tsrc_CustomerID = CustomerID,\n\t\tsrc_Title = Title,\n\t\tsrc_FirstName = FirstName,\n\t\tsrc_MiddleName = MiddleName,\n\t\tsrc_LastName = LastName,\n\t\tsrc_Suffix = Suffix,\n\t\tsrc_CompanyName = CompanyName,\n\t\tsrc_SalesPerson = SalesPerson,\n\t\tsrc_EmailAddress = EmailAddress,\n\t\tsrc_Phone = Phone\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RenameSourceColumns\nDimCustomer filter(toInteger(byName('IsCurrent')) == 1) ~> FilterForActive\nFilterForActive derive(Id_Hash = md5(byNames(split($PrimaryKey, ','))),\n\t\tColumns_Hash = md5(byNames(split($Columns, ',')))) ~> AddHashExisting\nAddHashInputs keyGenerate(output(CustomerKey as long),\n\tstartAt: 1L) ~> AddCustomerKey\nAddCustomerKey, GetMaxSurrogateKey join(CustomerKey == MaxSurrogateKey || true(),\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> JoinWithMaxSurrogatekey\nAddHashExisting aggregate(MaxSurrogateKey = max(toInteger(byName('CustomerKey')))) ~> GetMaxSurrogateKey\nJoinWithMaxSurrogatekey derive(CustomerKey = CustomerKey + MaxSurrogateKey,\n\t\tIsCurrent = 1,\n\t\tStartDate = currentUTC(),\n\t\tEndDate = toTimestamp(toString(null()))) ~> AddDimensionColumns\nAddDimensionColumns select(mapColumn(\n\t\tsrc_CustomerID,\n\t\tsrc_Title,\n\t\tsrc_FirstName,\n\t\tsrc_MiddleName,\n\t\tsrc_LastName,\n\t\tsrc_Suffix,\n\t\tsrc_CompanyName,\n\t\tsrc_SalesPerson,\n\t\tsrc_EmailAddress,\n\t\tsrc_Phone,\n\t\tIsCurrent,\n\t\tStartDate,\n\t\tEndDate,\n\t\tCustomerKey\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DropUnwantedColumns\nDropUnwantedColumns alterRow(insertIf(true())) ~> MarkAsInsert\nMarkAsInsert sink(input(\n\t\tCustomerKey as integer,\n\t\tCustomerID as integer,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string,\n\t\tStartDate as timestamp,\n\t\tEndDate as date,\n\t\tModifiedDate as date,\n\t\tIsCurrent as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tstaged: false,\n\tmapColumn(\n\t\tCustomerID = src_CustomerID,\n\t\tTitle = src_Title,\n\t\tFirstName = src_FirstName,\n\t\tMiddleName = src_MiddleName,\n\t\tLastName = src_LastName,\n\t\tSuffix = src_Suffix,\n\t\tCompanyName = src_CompanyName,\n\t\tSalesPerson = src_SalesPerson,\n\t\tEmailAddress = src_EmailAddress,\n\t\tPhone = src_Phone,\n\t\tStartDate,\n\t\tEndDate,\n\t\tIsCurrent\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimensionTableSink"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CustomerSourceADLS')]",
+				"[concat(variables('workspaceId'), '/datasets/DimCustomer_2')]"
 			]
 		},
 		{
@@ -612,6 +651,27 @@
 				"description": "Create table for SCD Type - 2 Data",
 				"content": {
 					"query": "CREATE TABLE dbo.[DimCustomer_2](\n    [CustomerID] [int] NOT NULL,\n    [Title] [nvarchar](8) NULL,\n    [FirstName] [nvarchar](50) NOT NULL,\n    [MiddleName] [nvarchar](50) NULL,\n    [LastName] [nvarchar](50) NOT NULL,\n    [Suffix] [nvarchar](10) NULL,\n    [CompanyName] [nvarchar](128) NULL,\n    [SalesPerson] [nvarchar](256) NULL,\n    [EmailAddress] [nvarchar](50) NULL,\n    [Phone] [nvarchar](25) NULL,\n    [InsertedDate] [datetime] NOT NULL,\n    [ModifiedDate] [datetime] NOT NULL,\n    [HashKey] [char](66)\n)\nWITH\n(\n    DISTRIBUTION = REPLICATE,\n    CLUSTERED COLUMNSTORE INDEX\n)",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "testsqlpool",
+						"databaseName": "testsqlpool"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create_DimCustomer')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Create Customer Dim script. ",
+				"content": {
+					"query": "DROP TABLE [dbo].[DimCustomer_1]\nGO\n\nSET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE TABLE [dbo].[DimCustomer_1]\n( \n\t[CustomerKey] INT IDENTITY (1, 1),\n\t[CustomerID] [int]  NOT NULL,\n\t[Title] [nvarchar](8)  NULL,\n\t[FirstName] [nvarchar](50)  NOT NULL,\n\t[MiddleName] [nvarchar](50)  NULL,\n\t[LastName] [nvarchar](50)  NOT NULL,\n\t[Suffix] [nvarchar](10)  NULL,\n\t[CompanyName] [nvarchar](128)  NULL,\n\t[SalesPerson] [nvarchar](256)  NULL,\n\t[EmailAddress] [nvarchar](50)  NULL,\n\t[Phone] [nvarchar](25)  NULL,\n\t[InsertedDate] [datetime]  NOT NULL,\n\t[ModifiedDate] [datetime]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = REPLICATE,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -699,27 +759,6 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Create_DimCustomer')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"description": "Create Customer Dim script. ",
-				"content": {
-					"query": "DROP TABLE [dbo].[DimCustomer_1]\nGO\n\nSET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE TABLE [dbo].[DimCustomer_1]\n( \n\t[CustomerKey] INT IDENTITY (1, 1),\n\t[CustomerID] [int]  NOT NULL,\n\t[Title] [nvarchar](8)  NULL,\n\t[FirstName] [nvarchar](50)  NOT NULL,\n\t[MiddleName] [nvarchar](50)  NULL,\n\t[LastName] [nvarchar](50)  NOT NULL,\n\t[Suffix] [nvarchar](10)  NULL,\n\t[CompanyName] [nvarchar](128)  NULL,\n\t[SalesPerson] [nvarchar](256)  NULL,\n\t[EmailAddress] [nvarchar](50)  NULL,\n\t[Phone] [nvarchar](25)  NULL,\n\t[InsertedDate] [datetime]  NOT NULL,\n\t[ModifiedDate] [datetime]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = REPLICATE,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"poolName": "testsqlpool",
-						"databaseName": "testsqlpool"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
 		}
 	]
 }

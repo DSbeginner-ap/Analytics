@@ -8,14 +8,8 @@
 		"SynapseSQLPool_connectionString": {
 			"value": ""
 		},
-		"ls_1_accountKey": {
-			"value": ""
-		},
 		"testashishsynapse-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
-		},
-		"ls_1_properties_typeProperties_url": {
-			"value": "https://ashishsynapse.dfs.core.windows.net"
 		},
 		"testashishsynapse-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"value": "https://ashishsynapse.dfs.core.windows.net"
