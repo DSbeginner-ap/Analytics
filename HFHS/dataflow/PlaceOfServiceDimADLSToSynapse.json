@@ -1,0 +1,13 @@
+{
+	"name": "PlaceOfServiceDimADLSToSynapse",
+	"properties": {
+		"description": "Pipeline to Integrate Data from ADLS to Synapse",
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [],
+			"sinks": [],
+			"transformations": [],
+			"script": ""
+		}
+	}
+}
