@@ -1,0 +1,91 @@
+{
+	"name": "ParquetPlaceOfservice",
+	"properties": {
+		"description": "Source Data For Place Of Service from ADLS",
+		"linkedServiceName": {
+			"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "PlaceOfServiceDim.parquet",
+				"folderPath": "datalake/transient/Warehouse/dbo/PlaceOfServiceDim",
+				"fileSystem": "ashishsynapsefilesystem"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "Id",
+				"type": "UTF8"
+			},
+			{
+				"name": "IdType",
+				"type": "UTF8"
+			},
+			{
+				"name": "PlaceOfServiceEpicId",
+				"type": "UTF8"
+			},
+			{
+				"name": "Name",
+				"type": "UTF8"
+			},
+			{
+				"name": "DisplayName",
+				"type": "UTF8"
+			},
+			{
+				"name": "Type",
+				"type": "UTF8"
+			},
+			{
+				"name": "FacilityType",
+				"type": "UTF8"
+			},
+			{
+				"name": "LocationCcn",
+				"type": "UTF8"
+			},
+			{
+				"name": "PhoneNumber",
+				"type": "UTF8"
+			},
+			{
+				"name": "Address",
+				"type": "UTF8"
+			},
+			{
+				"name": "City",
+				"type": "UTF8"
+			},
+			{
+				"name": "StateOrProvince",
+				"type": "UTF8"
+			},
+			{
+				"name": "PostalCode",
+				"type": "UTF8"
+			},
+			{
+				"name": "County",
+				"type": "UTF8"
+			},
+			{
+				"name": "Country",
+				"type": "UTF8"
+			},
+			{
+				"name": "EmailAddress",
+				"type": "UTF8"
+			},
+			{
+				"name": "WebAddress",
+				"type": "UTF8"
+			}
+		]
+	}
+}
