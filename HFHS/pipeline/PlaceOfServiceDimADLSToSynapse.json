@@ -25,7 +25,8 @@
 						"linkedService": {
 							"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
 							"type": "LinkedServiceReference"
-						}
+						},
+						"folderPath": "ashishsynapsefilesystem/synapse/workspaces/testashishsynapse/warehouse"
 					},
 					"compute": {
 						"coreCount": 8,
