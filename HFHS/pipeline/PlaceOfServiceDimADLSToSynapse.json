@@ -1,0 +1,10 @@
+{
+	"name": "PlaceOfServiceDimADLSToSynapse",
+	"properties": {
+		"description": "Integrate Place of Services from ADLS",
+		"folder": {
+			"name": "PlaceOfService"
+		},
+		"annotations": []
+	}
+}
