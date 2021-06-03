@@ -5,6 +5,7 @@
 		"activities": [
 			{
 				"name": "DF_PlaceOfService",
+				"description": "Data Flow Place Of Service",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -19,6 +20,12 @@
 					"dataflow": {
 						"referenceName": "PlaceOfServiceDimADLSToSynapse",
 						"type": "DataFlowReference"
+					},
+					"staging": {
+						"linkedService": {
+							"referenceName": "testashishsynapse-WorkspaceDefaultStorage",
+							"type": "LinkedServiceReference"
+						}
 					},
 					"compute": {
 						"coreCount": 8,
