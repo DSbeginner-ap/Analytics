@@ -1,0 +1,42 @@
+{
+	"name": "PlaceOfserviceDimIdLookUp",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SynapseSQLPool",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [
+			{
+				"name": "PlaceOfServiceKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Id",
+				"type": "varchar"
+			},
+			{
+				"name": "IdType",
+				"type": "varchar"
+			},
+			{
+				"name": "CreatedTimeStamp",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "UpdatedTimeStamp",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "PlaceOfServiceDim_IdLookup"
+		}
+	}
+}
