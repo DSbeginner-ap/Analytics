@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "SELECT TOP (100) [CustomerKey]\n,[CustomerID]\n,[Title]\n,[FirstName]\n,[MiddleName]\n,[LastName]\n,[Suffix]\n,[CompanyName]\n,[SalesPerson]\n,[EmailAddress]\n,[Phone]\n,[InsertedDate]\n,[ModifiedDate]\n FROM [dbo].[DimCustomer_1]\n WHERE CustomerId = 7",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "testsqlpool",
+				"databaseName": "testsqlpool"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
