@@ -1,0 +1,18 @@
+{
+	"name": "Create_CustomerDIm",
+	"properties": {
+		"description": "Table Creation script",
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE TABLE [dbo].[DimCustomer_1]\n( \n\t[CustomerKey] [int]  NOT NULL,\n\t[CustomerID] [int]  NOT NULL,\n\t[Title] [nvarchar](8)  NULL,\n\t[FirstName] [nvarchar](50)  NOT NULL,\n\t[MiddleName] [nvarchar](50)  NULL,\n\t[LastName] [nvarchar](50)  NOT NULL,\n\t[Suffix] [nvarchar](10)  NULL,\n\t[CompanyName] [nvarchar](128)  NULL,\n\t[SalesPerson] [nvarchar](256)  NULL,\n\t[EmailAddress] [nvarchar](50)  NULL,\n\t[Phone] [nvarchar](25)  NULL,\n\t[InsertedDate] [datetime]  NOT NULL,\n\t[ModifiedDate] [datetime]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = REPLICATE,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "testsqlpool",
+				"databaseName": "testsqlpool"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
