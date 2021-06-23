@@ -1,0 +1,20 @@
+{
+	"name": "Test_Pipeline_Demo",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Source_Customer_Demo",
+						"type": "DatasetReference"
+					},
+					"name": "CustomerData"
+				}
+			],
+			"sinks": [],
+			"transformations": [],
+			"script": "source(output(\n\t\tCustomerID as string,\n\t\tTitle as string,\n\t\tFirstName as string,\n\t\tMiddleName as string,\n\t\tLastName as string,\n\t\tSuffix as string,\n\t\tCompanyName as string,\n\t\tSalesPerson as string,\n\t\tEmailAddress as string,\n\t\tPhone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tlimit: 5,\n\tignoreNoFilesFound: false) ~> CustomerData"
+		}
+	}
+}
